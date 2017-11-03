@@ -1,0 +1,93 @@
+
+CS280 Programming Assignment 3 (UPDATE 1)
+Fall 2017 
+Part 1 due Nov 9 before midnight, no later than Nov 12
+Part 2 due Nov 16 before midnight, no later than Nov 19
+Part 3 due Nov 23 before midnight, no later than Nov 26
+!
+We define an EBNF grammar for a simple language. This grammar uses the tokens defined in 
+Programming Assignment 2. It defines nine different nonterminal symbols. The start symbol for 
+the grammar is “Prog”. For this assignment, you will write a recursive descent parser for this 
+grammar. Your goal is to build a parse tree, perform some semantic checks on the tree, and 
+generate some test output. 
+!
+You are expected to use your getToken() from Assignment 2 to read tokens, and to implement 
+nine functions for this parser. A skeleton implementation will be provided for you. You should use 
+the provided parser.h and lexer.h files. You should not change lexer.h. You may add any other 
+files, or change any other files that are given to you. 
+!
+For this assignment, you must create a main routine that parses input, either from a file or, if no 
+filename is specified, from the standard input. An optional “-t” argument may be provided. 
+!
+If the program is unable to open a file, it must print the filename followed by FILE NOT FOUND, 
+and should then stop. 
+!
+In all situations that require the generation of an error message, if the error message is specified 
+to include a filename, and if there is no filename (i.e. the standard in case), then the message 
+should NOT include the “filename:” portion of the message. 
+!
+The nine grammar rules are below 
+!
+Prog ::= StmtList 
+StmtList ::= { Stmt T_SC } { StmtList } 
+Stmt ::= Decl | Set | Print 
+Decl ::= T_INT T_ID | T_STRING T_ID 
+Set ::= T_SET T_ID Expr 
+Print ::= T_PRINT Expr | T_PRINTLN Expr 
+Expr ::= Term { (T_PLUS|T_MINUS) Expr } 
+Term ::= Primary { (T_STAR|T_SLASH) Term } 
+Primary ::= T_ICONST | T_SCONST | T_ID | T_LPAREN Expr T_RPAREN  
+!
+!
+!
+1
+!
+!
+The following are the semantic rules associated with this language: 
+!
+i.
+There are only two types: integer and string.
+ii.
+Variables must be declared before they are used. They are declared with Decl.
+iii.
+There is one single scope for variables.
+iv.
+Variable names must be unique; once a name has been declared, it may not be declared 
+again.
+v.
+An integer constant is of type integer.
+vi.
+A string constant is of type string.
+vii.
+The type of an identifier is the type assigned when it is declared.
+viii.
+The type of an Expr or a Term is the type of the result of the operation.
+ix.
+Adding two integers results in an integer representing the sum 
+x.
+Subtracting two integers results in an integer representing the difference 
+xi.
+Multiplying two integers results in an integer representing the product 
+xii.
+Dividing two integers results in an integer representing the quotient 
+xiii.
+Adding two strings results in a string representing the concatenation 
+xiv.
+Multiplying an integer by a string results in a string which is the string operand repeated 
+integer times (i.e. 3 * “hi” is “hihihi”) 
+xv.
+Dividing two strings results in an a string where the first instance of the denominator that 
+is found in the numerator is removed. 
+xvi.
+ALL OTHER COMBINATIONS OF OPERATIONS ARE UNDEFINED and are an error
+xvii.
+A variable is assigned a value using a Set. The type of the variable being set must match 
+the type of the expression; if it does not this is an error.
+xviii.
+An expression can be printed using either “print” or “println”. In both cases, the value of 
+the Expr is printed to the standard output. In the case of “println”, a newline is printed to 
+standard out at the end of the execution of the program.
+!
+!
+!
+2
