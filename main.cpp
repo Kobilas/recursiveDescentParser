@@ -8,7 +8,7 @@ void error(int linenum, const string& message)
 {
         cout << linenum + 1 << ":" << message;
 }
-bool OPT_V = false, OPT_I = false, OPT_S = false;
+bool OPT_V = false, OPT_I = false, OPT_S = false, OPT_T = false;
 bool endToken(Token& t)
 {
     if (t.GetTokenType() == T_ERROR) return true;
@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
         if (arg == "-v") OPT_V = true;
         else if (arg == "-i") OPT_I = true;
         else if (arg == "-s") OPT_S = true;
+        else if (arg == "-t") OPT_T = true;
         else
         {
             cout << arg << " INVALID FLAG" << endl;

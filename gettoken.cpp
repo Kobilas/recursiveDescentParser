@@ -6,7 +6,8 @@
 #include "lexer.h"
 using namespace std;
 int lineNumber = 0;
-map<enum TokenType, string> typeName = {
+map<enum TokenType, string> typeName =
+{
     { T_INT,     "T_INT" },
     { T_STRING,  "T_STRING" },
     { T_SET,     "T_SET" },
@@ -39,7 +40,8 @@ ostream& operator<<(ostream& o, const Token& t)
     }
     return o;
 }
-enum State {
+enum State
+{
     S_NONE,
     S_VAR,
     S_NUM,
