@@ -3,10 +3,11 @@
 #include <map>
 #include <string>
 #include "lexer.h"
+#include "parser.h"
 using namespace std;
 void error(int linenum, const string& message)
 {
-        cout << linenum + 1 << ":" << message;
+    cout << linenum + 1 << ":" << message;
 }
 bool OPT_V = false, OPT_I = false, OPT_S = false, OPT_T = false;
 bool endToken(Token& t)
@@ -27,7 +28,7 @@ int main(int argc, char *argv[])
         else if (arg == "-t") OPT_T = true;
         else
         {
-            cout << arg << " INVALID FLAG" << endl;
+            cout << arg << " UNRECOGNIZED FLAG" << endl;
             return 1;
         }
     }
@@ -52,24 +53,20 @@ int main(int argc, char *argv[])
         }
         in = &file;
     }
+    /*
     Token t;
-    int tokens = 0, ids = 0, strings = 0;
     map<string, unsigned int> smap, imap;
     while (!endToken(t = getToken(in)))
     {
         if (OPT_V) cout << t << endl;
-        tokens++;
-        if (t.GetTokenType() == T_SCONST) { strings++; smap[t.GetLexeme()]++; }
-        if (t.GetTokenType() == T_ID) { ids++; imap[t.GetLexeme()]++; }
+        if (t.GetTokenType() == T_SCONST) { smap[t.GetLexeme()]++; }
+        if (t.GetTokenType() == T_ID) { imap[t.GetLexeme()]++; }
     }
     if (t.GetTokenType() == T_ERROR)
     {
         cout << "Lexical error " << t << endl;
         return 1;
     }
-    cout << "Token count: " << tokens << endl;
-    cout << "Identifier count: " << ids << endl;
-    cout << "String count: " << strings << endl;
     if (OPT_S)
     {
         map<string, unsigned int>::iterator i;
@@ -94,11 +91,16 @@ int main(int argc, char *argv[])
         }
         if (!first) cout << endl;
     }
-    return 0;
-    ParseTree *tree = Prog(&cin);
+    */
+    ParseTree *tree = Prog(in);
     if (tree == 0)
     {
         return 1;
     }
+    tree->nodeCount(OPT_T);
+    cout << endl << "Total number of identifiers: " << tree->GetNumId() << endl;
+    cout << "Total number of set: " << tree->GetNumSet() << endl;
+    cout << "Total number of +: " << tree->GetNumPlus() << endl;
+    cout << "Total number of *: " << tree->GetNumStar() << endl;
     return 0;
 }

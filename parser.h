@@ -20,27 +20,86 @@ extern void error(int linenum, const string& message);
 
 enum TypeForNode { INT_TYPE, STRING_TYPE, ERROR_TYPE };
 
+enum operationType { OP_NULL, OP_ADD, OP_SUB, OP_MULT, OP_DIV };
+
 class ParseTree {
     int			linenumber;
+    int count, numId, numSet, numPlus, numStar;
     ParseTree	*left;
     ParseTree	*right;
 
 public:
-    ParseTree(int n, ParseTree *l = 0, ParseTree *r = 0) : linenumber(n), left(l), right(r) {}
+    ParseTree(int n, ParseTree *l = 0, ParseTree *r = 0) : linenumber(n), left(l), right(r)
+    {
+        count = 0;
+        numId = 0;
+        numSet = 0;
+        numPlus = 0;
+        numStar = 0;
+    }
     virtual ~ParseTree() {}
 
     ParseTree* getLeft() const { return left; }
     ParseTree* getRight() const { return right; }
     int getLineNumber() const { return linenumber; }
+    void nodeCount(bool tFlag)
+    {
+        //count, numId, numSet, numPlus, numStar
+        if (left != 0)
+        {
+            if (tFlag) std::cout << "L";
+            left->nodeCount(tFlag);
+            if (tFlag) std::cout << "u";
+        }
+        if (right != 0)
+        {
+            if (tFlag) std::cout << "R";
+            right->nodeCount(tFlag);
+            if (tFlag) std::cout << "U";
+        }
+        if (tFlag) std::cout << "N";
+        count++;
+        return;
+    }
 
     virtual TypeForNode GetType() const { return ERROR_TYPE; }
     virtual int GetIntValue() const { throw "no integer value"; }
     virtual string GetStringValue() const { throw "no string value"; }
+    virtual operationType GetOperation() const { return OP_NULL; }
+    int GetCount() const {return count;}
+    int GetNumId() const {return numId;}
+    int GetNumSet() const {return numSet;}
+    int GetNumPlus() const {return numPlus;}
+    int GetNumStar() const {return numStar;}
 };
 
 class StatementList : public ParseTree {
 public:
-    StatementList(int line, ParseTree *first, ParseTree *rest) : ParseTree(0, first, rest) {}
+    StatementList(ParseTree *first, ParseTree *rest) : ParseTree(0, first, rest) {}
+};
+
+class Statement : public ParseTree
+{
+public:
+    Statement(ParseTree *first, ParseTree *rest) : ParseTree(0, first, rest) {}
+};
+
+class Print : public ParseTree
+{
+public:
+    Print(ParseTree *first, ParseTree *rest) : ParseTree(0, first, rest) {}
+};
+
+class Expression : public ParseTree
+{
+public:
+    Expression(ParseTree *first, ParseTree *rest) : ParseTree(0, first, rest) {}
+};
+
+class Term : public ParseTree
+{
+public:
+    Term(ParseTree *first, ParseTree *rest) : ParseTree(0, first, rest) {}
 };
 
 class Addition : public ParseTree {
@@ -50,29 +109,30 @@ class Addition : public ParseTree {
 public:
     Addition(int line, ParseTree *op1, ParseTree *op2) : ParseTree(line, op1, op2)
     {
-        if ((op1.GetType() == INT_TYPE) && (op2.GetType() == INT_TYPE))
+        if ((op1->GetType() == INT_TYPE) && (op2->GetType() == INT_TYPE))
         {
             nodeType = INT_TYPE;
-            iValue = op1.GetIntValue() + op2.GetIntValue();
+            iValue = op1->GetIntValue() + op2->GetIntValue();
         }
-        else if ((op1.GetType() == STRING_TYPE) && (op2.GetType() == STRING_TYPE))
+        else if ((op1->GetType() == STRING_TYPE) && (op2->GetType() == STRING_TYPE))
         {
             nodeType = STRING_TYPE;
-            sValue = op1.GetStringValue() + op2.GetStringValue();
+            sValue = op1->GetStringValue() + op2->GetStringValue();
         }
         else nodeType = ERROR_TYPE;
     }
-    TypeForNode GetType() const {return nodeType;}
+    TypeForNode GetType() const { return nodeType; }
     int GetIntValue() const
     {
         if (nodeType == INT_TYPE) return iValue;
         else throw "no integer value";
     }
-    string GetStringValue() const 
+    string GetStringValue() const
     {
         if (nodeType == STRING_TYPE) return sValue;
         else throw "no string value";
     }
+    operationType GetOperation() const { return OP_ADD; }
 };
 
 class Subtraction : public ParseTree {
@@ -81,19 +141,20 @@ class Subtraction : public ParseTree {
 public:
     Subtraction(int line, ParseTree *op1, ParseTree *op2) : ParseTree(line, op1, op2)
     {
-        if ((op1.GetType() == INT_TYPE) && (op2.GetType() == INT_TYPE))
+        if ((op1->GetType() == INT_TYPE) && (op2->GetType() == INT_TYPE))
         {
             nodeType = INT_TYPE;
-            value = op1.GetIntValue() - op2.GetIntValue();
+            value = op1->GetIntValue() - op2->GetIntValue();
         }
         else nodeType = ERROR_TYPE;
     }
-    TypeForNode GetType() const {return nodeType;}
+    TypeForNode GetType() const { return nodeType; }
     int GetIntValue() const
     {
-        if (nodeType == INT_TYPE) return iValue;
+        if (nodeType == INT_TYPE) return value;
         else throw "no integer value";
     }
+    operationType GetOperation() const { return OP_SUB; }
 };
 
 class Multiplication : public ParseTree {
@@ -103,30 +164,30 @@ class Multiplication : public ParseTree {
 public:
     Multiplication(int line, ParseTree *op1, ParseTree *op2) : ParseTree(line, op1, op2)
     {
-        if ((op1.GetType() == INT_TYPE) && (op2.GetType() == INT_TYPE))
+        if ((op1->GetType() == INT_TYPE) && (op2->GetType() == INT_TYPE))
         {
             nodeType = INT_TYPE;
-            iValue = op1.GetIntValue() * op2.GetIntValue();
+            iValue = op1->GetIntValue() * op2->GetIntValue();
         }
-        else if ((op1.GetType() == INT_TYPE) && (op2.GetType() == STRING_TYPE))
+        else if ((op1->GetType() == INT_TYPE) && (op2->GetType() == STRING_TYPE))
         {
             nodeType = STRING_TYPE;
             sValue = "";
-            int max = op1.GetIntValue();
-            string str = op2.GetStringValue();
-            for(int i = 0; i < max; i++) sValue += str;
+            int max = op1->GetIntValue();
+            string str = op2->GetStringValue();
+            for (int i = 0; i < max; i++) sValue += str;
         }
-        else if ((op1.GetType() == STRING_TYPE) && (op2.GetType() == INT_TYPE))
+        else if ((op1->GetType() == STRING_TYPE) && (op2->GetType() == INT_TYPE))
         {
             nodeType = STRING_TYPE;
             sValue = "";
-            int max = op2.GetIntValue();
-            string str = op1.GetStringValue();
-            for(int i = 0; i < max; i++) sValue += str;
+            int max = op2->GetIntValue();
+            string str = op1->GetStringValue();
+            for (int i = 0; i < max; i++) sValue += str;
         }
         else nodeType = ERROR_TYPE;
     }
-    TypeForNode GetType() const {return nodeType;}
+    TypeForNode GetType() const { return nodeType; }
     int GetIntValue() const
     {
         if (nodeType == INT_TYPE) return iValue;
@@ -137,6 +198,7 @@ public:
         if (nodeType == STRING_TYPE) return sValue;
         else throw "no string value";
     }
+    operationType GetOperation() const { return OP_MULT; }
 };
 
 class Division : public ParseTree {
@@ -146,21 +208,21 @@ class Division : public ParseTree {
 public:
     Division(int line, ParseTree *op1, ParseTree *op2) : ParseTree(line, op1, op2)
     {
-        if ((op1.GetType() == INT_TYPE) && (op2.GetType() == INT_TYPE))
+        if ((op1->GetType() == INT_TYPE) && (op2->GetType() == INT_TYPE))
         {
             nodeType = INT_TYPE;
-            iValue = op1.GetIntValue() / op2.GetIntValue();
+            iValue = op1->GetIntValue() / op2->GetIntValue();
         }
-        else if ((op1.GetType() == STRING_TYPE) && (op2.GetType() == STRING_TYPE))
+        else if ((op1->GetType() == STRING_TYPE) && (op2->GetType() == STRING_TYPE))
         {
             nodeType = STRING_TYPE;
-            string str = op1.GetStringValue();
-            string toFind = op2.GetStringValue();
+            string str = op1->GetStringValue();
+            string toFind = op2->GetStringValue();
             sValue = str.replace(str.find(toFind), toFind.length(), "");
         }
         else nodeType = ERROR_TYPE;
     }
-    TypeForNode GetType() const {return nodeType;}
+    TypeForNode GetType() const { return nodeType; }
     int GetIntValue() const
     {
         if (nodeType == INT_TYPE) return iValue;
@@ -171,6 +233,7 @@ public:
         if (nodeType == STRING_TYPE) return sValue;
         else throw "no string value";
     }
+    operationType GetOperation() const { return OP_DIV; }
 };
 
 class IntegerConstant : public ParseTree {
@@ -180,8 +243,8 @@ public:
     {
         value = stoi(tok.GetLexeme());
     }
-    TypeForNode GetType() const {return INT_TYPE;}
-    int GetIntValue() const {return value;}
+    TypeForNode GetType() const { return INT_TYPE; }
+    int GetIntValue() const { return value; }
 };
 
 class StringConstant : public ParseTree {
@@ -191,8 +254,8 @@ public:
     {
         value = tok.GetLexeme();
     }
-    TypeForNode GetType() const {return STRING_TYPE;}
-    int GetStringValue() const {return value;}
+    TypeForNode GetType() const { return STRING_TYPE; }
+    string GetStringValue() const { return value; }
 };
 
 extern ParseTree *	Prog(istream* in);
@@ -200,9 +263,9 @@ extern ParseTree *	StmtList(istream* in);
 extern ParseTree *	Stmt(istream* in);
 extern ParseTree *	Decl(istream* in);
 extern ParseTree *	Set(istream* in);
-extern ParseTree *	Print(istream* in);
+extern ParseTree *	Prnt(istream* in);
 extern ParseTree *	Expr(istream* in);
-extern ParseTree *	Term(istream* in);
+extern ParseTree *	Trm(istream* in);
 extern ParseTree *	Primary(istream* in);
 
 
