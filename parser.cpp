@@ -32,6 +32,23 @@ public:
 } ParserToken;
 
 Token nextToken;
+extern int numId, numSet, numStar, numPlus;
+
+void treeTraverse(ParseTree* node) {
+    if (node == 0)
+        return;
+    if (node->getLeft() != 0) {
+        std::cout << "L";
+        treeTraverse(node->getLeft());
+        std::cout << "u";
+    }
+    if (node->getRight() != 0) {
+        std::cout << "R";
+        treeTraverse(node->getRight());
+        std::cout << "U";
+    }
+    std::cout << "N";
+}
 
 ParseTree * Prog(istream* in)
 {
@@ -48,122 +65,153 @@ ParseTree * StmtList(istream* in)
 
 ParseTree *	Stmt(istream* in)
 {
-    nextToken = ParserToken.getToken(in);
-    if ((nextToken.GetTokenType() == T_INT)
-        || (nextToken.GetTokenType() == T_STRING))
-    {
-        ParseTree *decl = Decl(in);
-        return decl;
+    ParseTree * statement = Prnt(in);
+    if (statement == 0) statement = Decl(in);
+    if (statement == 0) statement = Set(in);
+
+    if (statement != 0) {
+        nextToken = ParserToken.getToken(in);
+        if (nextToken == T_SC) return statement;
+        else {
+            error(nextToken.GetLinenum(), "Syntax error missing semicolon\n");
+            return 0;
+        }
     }
-    else if (nextToken.GetTokenType() == T_SET)
-    {
-        ParseTree *set = Set(in);
-        return set;
-    }
-    else if ((nextToken.GetTokenType() == T_PRINT)
-        || (nextToken.GetTokenType() == T_PRINTLN))
-    {
-        ParseTree *print = Prnt(in);
-        return new Statement(print, Stmt(in));
-    }
-    else ParserToken.pushbackToken(nextToken);
+
     return 0;
 }
 
 ParseTree *	Decl(istream* in)
 {
     nextToken = ParserToken.getToken(in);
-    if (nextToken.GetTokenType() == T_ID)
-    {
-        ParseTree *decl = new ParseTree(nextToken.GetLinenum());
-        return decl;
+    if (nextToken == T_INT || nextToken == T_STRING) {
+        bool isString = false;
+        if (nextToken == T_STRING) isString = true;
+        nextToken = ParserToken.getToken(in);
+        if (nextToken == T_ID) {
+            numId++;
+            if (isString) return new StringSt(nextToken);
+            else return new IntegerSt(nextToken);
+        }
+        else {
+            ParserToken.pushbackToken(nextToken);
+            error(nextToken.GetLinenum(), "Syntax error ID required");
+            return 0;
+        }
     }
-    else ParserToken.pushbackToken(nextToken);
+    ParserToken.pushbackToken(nextToken);
     return 0;
 }
 
 ParseTree *	Set(istream* in)
 {
     nextToken = ParserToken.getToken(in);
-    if (nextToken.GetTokenType() == T_ID)
+    if (nextToken.GetTokenType() != T_SET) {
+        ParserToken.pushbackToken(nextToken);
+        return 0;
+    }
+    if (nextToken.GetTokenType() == T_SET)
     {
+        nextToken = ParserToken.getToken(in);
+        if (nextToken != T_ID) {
+            ParserToken.pushbackToken(nextToken);
+            error(nextToken.GetLinenum(), "Syntax error ID required");
+            return 0;
+        }
         ParseTree *expr = Expr(in);
-        return expr;
+        if (expr != 0) {
+            numSet++;
+            return new SetSt(expr, 0);
+        }
     }
     else ParserToken.pushbackToken(nextToken);
+    error(nextToken.GetLinenum(), "Syntax error expression required");
     return 0;
 }
 
 ParseTree *	Prnt(istream* in)
 {
-    ParseTree *expr = Expr(in);
-    return new Print(expr, Prnt(in));
+    nextToken = getToken(in);
+    if (nextToken.GetTokenType() == T_PRINT || nextToken.GetTokenType() == T_PRINTLN) {
+        ParseTree *expr = Expr(in);
+        if (expr != 0) {
+            return new Print(expr, 0);
+        }
+    }
+    ParserToken.pushbackToken(nextToken);
+    return 0;
 }
 
 ParseTree *Expr(istream* in)
 {
-    ParseTree *term1 = Trm(in);
-    if (term1 == 0) return 0;
-    for (;;)
-    {
-        nextToken = ParserToken.getToken(in);
-        if ((nextToken.GetTokenType() != T_PLUS)
-            && (nextToken.GetTokenType() != T_MINUS))
-        {
-            return new Expression(term1, Expr(in));
+    ParseTree *t1 = Trm(in);
+    if (t1 == 0)
+        return 0;
+
+    for (;;) {
+        Token op = ParserToken.getToken(in);
+        if (op != T_PLUS && op != T_MINUS) {
+            ParserToken.pushbackToken(op);
+            return t1;
         }
-        ParseTree *term2 = Expr(in);
-        if (term2 == 0)
-        {
-            error(nextToken.GetLinenum(), "expression required after + or - operator");
+
+        ParseTree *t2 = Expr(in);
+        if (t2 == 0) {
+            error(op.GetLinenum(), "expression required after + or - operator");
             return 0;
         }
-        if (nextToken.GetTokenType() == T_PLUS)
-            term1 = new Addition(nextToken.GetLinenum(), term1, term2);
-        else term1 = new Subtraction(nextToken.GetLinenum(), term1, term2);
+
+        // combine t1 and t2 together
+        if (op == T_PLUS) {
+            t1 = new Addition(op.GetLinenum(), t1, t2);
+            numPlus++;
+        }
+        else
+            t1 = new Subtraction(op.GetLinenum(), t1, t2);
     }
+
+    // should never get here...
     return 0;
 }
 
 ParseTree *	Trm(istream* in)
 {
-    ParseTree *primary = Primary(in);
-    if (primary == 0)
-    {
+    ParseTree *prim = Primary(in);
+    if (prim == 0)
         return 0;
-    }
-    for (;;)
-    {
-        std::cerr << nextToken.GetLexeme();
-        nextToken = ParserToken.getToken(in);
-        if ((nextToken.GetTokenType() != T_STAR)
-            && (nextToken.GetTokenType() != T_SLASH))
-        {
-            return new Term(primary, 0);
+
+    for (;;) {
+        Token op = ParserToken.getToken(in);
+        if (op != T_STAR && op != T_SLASH) {
+            ParserToken.pushbackToken(op);
+            return prim;
         }
-        ParseTree *term = Trm(in);
-        if (term == 0)
-        {
-            error(nextToken.GetLinenum(), "expression required after * or / operator");
+
+        ParseTree *termo = Trm(in);
+        if (termo == 0) {
+            error(op.GetLinenum(), "expression required after + or - operator");
             return 0;
         }
-        if (nextToken.GetTokenType() == T_STAR)
-            primary = new Multiplication(nextToken.GetLinenum(), primary, term);
-        else primary = new Division(nextToken.GetLinenum(), primary, term);
+
+        // combine t1 and t2 together
+        if (op == T_STAR) {
+            prim = new Multiplication(op.GetLinenum(), prim, termo);
+            numStar++;
+        }
+        else
+            prim = new Division(op.GetLinenum(), prim, termo);
     }
+
+    // should never get here...
     return 0;
 }
 
 ParseTree *	Primary(istream* in)
 {
-    std::cerr << "primary" << nextToken.GetLexeme();
     nextToken = ParserToken.getToken(in);
-    if (nextToken.GetTokenType() == T_ICONST)
-    {
-        ParseTree *iconst = new IntegerConstant(nextToken);
-        return iconst;
-    }
-    //if (nextToken.GetTokenType() == T_SCONST) return StringConstant(nextToken);
-    //if (nextToken.GetTokenType() == T_ID) return 
+    if (nextToken.GetTokenType() == T_ICONST) return new IntegerConstant(nextToken);
+    if (nextToken.GetTokenType() == T_SCONST) return new StringConstant(nextToken);
+    if (nextToken.GetTokenType() == T_ID) return new ID(nextToken);
+    error(nextToken.GetLinenum(), "Syntax error primary expected");
     return 0;
 }

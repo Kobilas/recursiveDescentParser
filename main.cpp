@@ -5,11 +5,15 @@
 #include "lexer.h"
 #include "parser.h"
 using namespace std;
+bool OPT_V = false, OPT_I = false, OPT_S = false, OPT_T = false;
+int numId = 0, numSet = 0, numStar = 0, numPlus = 0;
+string arg = "";
+
 void error(int linenum, const string& message)
 {
-    cout << linenum + 1 << ":" << message;
+    cout << arg << ":" << linenum + 1 << ":" << message << endl;
 }
-bool OPT_V = false, OPT_I = false, OPT_S = false, OPT_T = false;
+
 bool endToken(Token& t)
 {
     if (t.GetTokenType() == T_ERROR) return true;
@@ -21,7 +25,7 @@ int main(int argc, char *argv[])
     for (int i = 1; i<argc; i++)
     {
         if (argv[i][0] != '-') continue;
-        string arg(argv[i]);
+        arg = argv[i];
         if (arg == "-v") OPT_V = true;
         else if (arg == "-i") OPT_I = true;
         else if (arg == "-s") OPT_S = true;
@@ -44,7 +48,7 @@ int main(int argc, char *argv[])
             return 1;
         }
         foundfile = true;
-        string arg(argv[i]);
+        arg = argv[i];
         file.open(arg);
         if (!file.is_open())
         {
@@ -58,38 +62,38 @@ int main(int argc, char *argv[])
     map<string, unsigned int> smap, imap;
     while (!endToken(t = getToken(in)))
     {
-        if (OPT_V) cout << t << endl;
-        if (t.GetTokenType() == T_SCONST) { smap[t.GetLexeme()]++; }
-        if (t.GetTokenType() == T_ID) { imap[t.GetLexeme()]++; }
+    if (OPT_V) cout << t << endl;
+    if (t.GetTokenType() == T_SCONST) { smap[t.GetLexeme()]++; }
+    if (t.GetTokenType() == T_ID) { imap[t.GetLexeme()]++; }
     }
     if (t.GetTokenType() == T_ERROR)
     {
-        cout << "Lexical error " << t << endl;
-        return 1;
+    cout << "Lexical error " << t << endl;
+    return 1;
     }
     if (OPT_S)
     {
-        map<string, unsigned int>::iterator i;
-        bool first = true;
-        for (i = smap.begin(); i != smap.end(); i++)
-        {
-            if (!first) cout << ", ";
-            first = false;
-            cout << i->first;
-        }
-        if (!first) cout << endl;
+    map<string, unsigned int>::iterator i;
+    bool first = true;
+    for (i = smap.begin(); i != smap.end(); i++)
+    {
+    if (!first) cout << ", ";
+    first = false;
+    cout << i->first;
+    }
+    if (!first) cout << endl;
     }
     if (OPT_I)
     {
-        map<string, unsigned int>::iterator i;
-        bool first = true;
-        for (i = imap.begin(); i != imap.end(); i++)
-        {
-            if (!first) cout << ", ";
-            first = false;
-            cout << i->first;
-        }
-        if (!first) cout << endl;
+    map<string, unsigned int>::iterator i;
+    bool first = true;
+    for (i = imap.begin(); i != imap.end(); i++)
+    {
+    if (!first) cout << ", ";
+    first = false;
+    cout << i->first;
+    }
+    if (!first) cout << endl;
     }
     */
     ParseTree *tree = Prog(in);
@@ -97,10 +101,13 @@ int main(int argc, char *argv[])
     {
         return 1;
     }
-    tree->nodeCount(OPT_T);
-    cout << endl << "Total number of identifiers: " << tree->GetNumId() << endl;
-    cout << "Total number of set: " << tree->GetNumSet() << endl;
-    cout << "Total number of +: " << tree->GetNumPlus() << endl;
-    cout << "Total number of *: " << tree->GetNumStar() << endl;
+    if (OPT_T) {
+        treeTraverse(tree);
+        cout << endl;
+    }
+    cout << "Total number of identifiers: " << numId << endl;
+    cout << "Total number of set: " << numSet << endl;
+    cout << "Total number of +: " << numPlus << endl;
+    cout << "Total number of *: " << numStar << endl;
     return 0;
 }

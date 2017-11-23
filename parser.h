@@ -42,36 +42,19 @@ public:
     ParseTree* getLeft() const { return left; }
     ParseTree* getRight() const { return right; }
     int getLineNumber() const { return linenumber; }
-    void nodeCount(bool tFlag)
-    {
-        //count, numId, numSet, numPlus, numStar
-        if (left != 0)
-        {
-            if (tFlag) std::cout << "L";
-            left->nodeCount(tFlag);
-            if (tFlag) std::cout << "u";
-        }
-        if (right != 0)
-        {
-            if (tFlag) std::cout << "R";
-            right->nodeCount(tFlag);
-            if (tFlag) std::cout << "U";
-        }
-        if (tFlag) std::cout << "N";
-        count++;
-        return;
-    }
 
     virtual TypeForNode GetType() const { return ERROR_TYPE; }
     virtual int GetIntValue() const { throw "no integer value"; }
     virtual string GetStringValue() const { throw "no string value"; }
     virtual operationType GetOperation() const { return OP_NULL; }
-    int GetCount() const {return count;}
-    int GetNumId() const {return numId;}
-    int GetNumSet() const {return numSet;}
-    int GetNumPlus() const {return numPlus;}
-    int GetNumStar() const {return numStar;}
+    int GetCount() const { return count; }
+    int GetNumId() const { return numId; }
+    int GetNumSet() const { return numSet; }
+    int GetNumPlus() const { return numPlus; }
+    int GetNumStar() const { return numStar; }
 };
+
+void treeTraverse(ParseTree * node);
 
 class StatementList : public ParseTree {
 public:
@@ -88,6 +71,16 @@ class Print : public ParseTree
 {
 public:
     Print(ParseTree *first, ParseTree *rest) : ParseTree(0, first, rest) {}
+};
+
+class SetSt : public ParseTree {
+public:
+    SetSt(ParseTree *first, ParseTree *rest) : ParseTree(0, first, rest) {}
+};
+
+class Declare : public ParseTree {
+public:
+    Declare(ParseTree *first, ParseTree *rest) : ParseTree(0, first, rest) {}
 };
 
 class Expression : public ParseTree
@@ -256,6 +249,21 @@ public:
     }
     TypeForNode GetType() const { return STRING_TYPE; }
     string GetStringValue() const { return value; }
+};
+
+class StringSt : public ParseTree {
+public:
+    StringSt(Token t) : ParseTree(t.GetLinenum()) {}
+};
+
+class IntegerSt : public ParseTree {
+public:
+    IntegerSt(Token t) : ParseTree(t.GetLinenum()) {}
+};
+
+class ID : public ParseTree {
+public:
+    ID(Token t) : ParseTree(t.GetLinenum()) {}
 };
 
 extern ParseTree *	Prog(istream* in);
