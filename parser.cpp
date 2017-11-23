@@ -4,6 +4,7 @@
 */
 
 #include <string>
+#include <map>
 using std::string;
 
 #include "lexer.h"
@@ -33,6 +34,8 @@ public:
 
 Token nextToken;
 extern int numId, numSet, numStar, numPlus;
+map<string, int> intIds;
+map<string, string> stringIds;
 
 void treeTraverse(ParseTree* node) {
     if (node == 0)
@@ -68,12 +71,11 @@ ParseTree *	Stmt(istream* in)
     ParseTree * statement = Prnt(in);
     if (statement == 0) statement = Decl(in);
     if (statement == 0) statement = Set(in);
-
     if (statement != 0) {
         nextToken = ParserToken.getToken(in);
         if (nextToken == T_SC) return statement;
         else {
-            error(nextToken.GetLinenum(), "Syntax error missing semicolon\n");
+            error(nextToken.GetLinenum(), "syntax error missing semicolon\n");
             return 0;
         }
     }
@@ -90,12 +92,38 @@ ParseTree *	Decl(istream* in)
         nextToken = ParserToken.getToken(in);
         if (nextToken == T_ID) {
             numId++;
-            if (isString) return new StringSt(nextToken);
-            else return new IntegerSt(nextToken);
+            if (isString)
+            {
+                if(stringIds.find(nextToken.GetLexeme) == stringIds.end())
+                {
+                    stringIds[nextToken.GetLexeme()];
+                    return new StringSt(nextToken);
+                }
+                else
+                {
+                    error(nextToken.GetLinenum(), "variable " + nextToken.GetLexeme()
+                        + " was already declared");
+                    return 0;
+                }
+            }
+            else
+            {
+                if(intIds.find(nextToken.GetLexeme) == intIds.end())
+                {
+                    intIds[nextToken.GetLexeme()];
+                    return new IntegerSt(nextToken);
+                }
+                else
+                {
+                    error(nextToken.GetLinenum(), "variable " + nextToken.GetLexeme()
+                        + " was already declared");
+                    return 0;
+                }
+            }
         }
         else {
             ParserToken.pushbackToken(nextToken);
-            error(nextToken.GetLinenum(), "Syntax error ID required");
+            error(nextToken.GetLinenum(), "syntax error ID required");
             return 0;
         }
     }
@@ -115,7 +143,7 @@ ParseTree *	Set(istream* in)
         nextToken = ParserToken.getToken(in);
         if (nextToken != T_ID) {
             ParserToken.pushbackToken(nextToken);
-            error(nextToken.GetLinenum(), "Syntax error ID required");
+            error(nextToken.GetLinenum(), "syntax error ID required");
             return 0;
         }
         ParseTree *expr = Expr(in);
@@ -125,7 +153,7 @@ ParseTree *	Set(istream* in)
         }
     }
     else ParserToken.pushbackToken(nextToken);
-    error(nextToken.GetLinenum(), "Syntax error expression required");
+    error(nextToken.GetLinenum(), "syntax error expression required");
     return 0;
 }
 
@@ -212,6 +240,6 @@ ParseTree *	Primary(istream* in)
     if (nextToken.GetTokenType() == T_ICONST) return new IntegerConstant(nextToken);
     if (nextToken.GetTokenType() == T_SCONST) return new StringConstant(nextToken);
     if (nextToken.GetTokenType() == T_ID) return new ID(nextToken);
-    error(nextToken.GetLinenum(), "Syntax error primary expected");
+    error(nextToken.GetLinenum(), "syntax error primary expected");
     return 0;
 }
